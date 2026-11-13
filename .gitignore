@@ -1,0 +1,7 @@
+# Ignore all generations; keep the engine and folder placeholder.
+/Export/*
+!Export/.gitkeep
+!Export/_Engine/
+!Export/_Engine/**
+__pycache__/
+.DS_Store
