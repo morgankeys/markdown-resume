@@ -23,6 +23,22 @@ def properties(parent, name):
     node = parent.find(tag(name))
     return node if node is not None else ET.SubElement(parent, tag(name))
 
+def pin_font(rpr, font):
+    # Drop theme-font pointers such as Aptos. LibreOffice otherwise uses that face
+    # for the PDF when it is named as the document theme, even if the style says Arial.
+    node = rpr.find(tag('rFonts'))
+    if node is None or not any(name.endswith('Theme') for name in node.attrib):
+        return
+    set_element(rpr, 'rFonts', ascii=font, hAnsi=font, eastAsia=font, cs=font)
+
+def use_body_font(theme_xml, font):
+    text = theme_xml.decode('utf-8')
+    def latin(match):
+        return re.sub(r'(<a:latin\b[^>]*\btypeface=")[^"]*"', rf'\1{font}"', match.group(0), count=1)
+    text = re.sub(r'<a:majorFont>.*?</a:majorFont>', latin, text, count=1, flags=re.S)
+    text = re.sub(r'<a:minorFont>.*?</a:minorFont>', latin, text, count=1, flags=re.S)
+    return text.encode('utf-8')
+
 def apply(style, values):
     link = style.find(tag('link'))
     if link is not None:
@@ -62,6 +78,9 @@ def build_reference(pandoc, theme_path, output):
             item = ET.SubElement(fonts, tag('font'), {tag('name'): font})
             set_element(item, 'family', val='swiss')
             set_element(item, 'pitch', val='variable')
+    for font in list(fonts):
+        if font.get(tag('name')) in {'Aptos', 'Aptos Display'}:
+            fonts.remove(font)
     # Do not embed Arial Black here. Pandoc copies the embed relationship into the
     # exported document and drops the font file, and LibreOffice then refuses to open it.
     # Export installs Arial Black and subsets it into the PDF instead.
@@ -79,6 +98,16 @@ def build_reference(pandoc, theme_path, output):
         raise ValueError('Invalid link color')
     set_element(hyperlink, 'color', val=color.upper())
     set_element(hyperlink, 'u', val='single' if theme['links']['underline'] else 'none')
+    defaults = styles.find(f'.//{tag("rPrDefault")}/{tag("rPr")}')
+    if defaults is not None:
+        pin_font(defaults, theme['body']['font'])
+    for style in styles.findall(tag('style')):
+        rpr = style.find(tag('rPr'))
+        if rpr is None:
+            continue
+        face = theme['title']['font'] if style.get(tag('styleId')) in {'Title', 'TitleChar'} else theme['body']['font']
+        pin_font(rpr, face)
+    files['word/theme/theme1.xml'] = use_body_font(files['word/theme/theme1.xml'], theme['body']['font'])
     document = ET.fromstring(files['word/document.xml'])
     section = document.find('.//' + tag('sectPr'))
     page = theme['page']

@@ -2,29 +2,29 @@
   "page": {
     "width_in": 8.5,
     "height_in": 11,
-    "margin_top_in": 1,
-    "margin_bottom_in": 1,
-    "margin_left_in": 1,
-    "margin_right_in": 1
+    "margin_top_in": 0.75,
+    "margin_bottom_in": 0.75,
+    "margin_left_in": 0.75,
+    "margin_right_in": 0.75
   },
   "body": {
     "font": "Arial",
-    "size_pt": 11,
+    "size_pt": 10,
     "color": "#434343",
-    "line_spacing": 1.15,
+    "line_spacing": 1.0,
     "space_before_pt": 0,
     "space_after_pt": 3
   },
   "title": {
     "font": "Arial Black",
-    "size_pt": 26,
+    "size_pt": 18,
     "color": "#434343",
     "bold": true,
     "space_before_pt": 0,
     "space_after_pt": 3
   },
   "section_heading": {
-    "size_pt": 10,
+    "size_pt": 11,
     "color": "#CC0000",
     "bold": true,
     "space_before_pt": 20,
