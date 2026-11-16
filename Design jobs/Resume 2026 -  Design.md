@@ -19,13 +19,13 @@ Denver, CO
 
 # WORK EXPERIENCE
 
-## **Independent consultant**
+## **Independent Product Designer & AI Builder at Independent / Self-employed**
 
 Sep 2026 - Present
 
-* Building an AI-prototyping kit that helps design teams get consistent, on-brand output from AI coding tools, paired with training and services.
+* Building an AI-prototyping kit that helps design teams get consistent, on-brand output from AI coding tools, to sharpen skills between full-time roles.
 
-* Validating the concept with design leaders and an early-stage investor before seeking pilot customers.
+* Validating the concept with feedback from design leaders and an industry expert.
 
 * Designing a brand and building a marketing site.
 
