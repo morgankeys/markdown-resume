@@ -1,0 +1,66 @@
+name: Export resumes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**/*.md"
+      - "!README.md"
+      - "!AGENTS.md"
+      - "!Reference/**"
+      - "Export/_Engine/**"
+      - ".github/workflows/export-resumes.yml"
+  pull_request:
+    paths:
+      - "**/*.md"
+      - "!README.md"
+      - "!AGENTS.md"
+      - "!Reference/**"
+      - "Export/_Engine/**"
+      - ".github/workflows/export-resumes.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: export-resumes-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the branch
+        uses: actions/checkout@v4
+
+      - name: Install Pandoc, LibreOffice, and Arial
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc libreoffice-writer fontconfig cabextract
+          echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | sudo debconf-set-selections
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ttf-mscorefonts-installer
+          fc-cache -f
+          fc-list : family | grep -qx 'Arial'
+          fc-list : family | grep -qx 'Arial Black'
+
+      - name: Export resumes
+        run: python3 Export/_Engine/scripts/export.py | tee "$RUNNER_TEMP/exports.txt"
+
+      - name: Commit timestamped and Latest copies
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if [ ! -s "$RUNNER_TEMP/exports.txt" ]; then
+            echo "Export produced no files."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f --pathspec-from-file="$RUNNER_TEMP/exports.txt"
+          if git diff --cached --quiet; then
+            echo "Exports already match this commit."
+            exit 0
+          fi
+          git commit -m "Export resume PDFs and Word files"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
