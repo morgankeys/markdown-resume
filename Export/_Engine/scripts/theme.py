@@ -62,16 +62,9 @@ def build_reference(pandoc, theme_path, output):
             item = ET.SubElement(fonts, tag('font'), {tag('name'): font})
             set_element(item, 'family', val='swiss')
             set_element(item, 'pitch', val='variable')
-    # Preserve the title font embedded in the original Google Docs download.
-    font_path = theme_path.parent / 'fonts/ArialBlack-regular.ttf'
-    if font_path.exists() and any(f.get(tag('name')) == 'Arial Black' for f in fonts):
-        font = next(f for f in fonts if f.get(tag('name')) == 'Arial Black')
-        ET.SubElement(font, tag('embedRegular'), {tag('fontKey'): '{00000000-0000-0000-0000-000000000000}', '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id': 'resumeFont', tag('subsetted'): '0'})
-        files['word/fonts/ArialBlack-regular.ttf'] = font_path.read_bytes()
-        files['word/_rels/fontTable.xml.rels'] = b'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="resumeFont" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/font" Target="fonts/ArialBlack-regular.ttf"/></Relationships>'
-        types = ET.fromstring(files['[Content_Types].xml'])
-        ET.SubElement(types, '{http://schemas.openxmlformats.org/package/2006/content-types}Override', PartName='/word/fonts/ArialBlack-regular.ttf', ContentType='application/x-font-ttf')
-        files['[Content_Types].xml'] = ET.tostring(types, encoding='utf-8', xml_declaration=True)
+    # Do not embed Arial Black here. Pandoc copies the embed relationship into the
+    # exported document and drops the font file, and LibreOffice then refuses to open it.
+    # Export installs Arial Black and subsets it into the PDF instead.
     files['word/fontTable.xml'] = ET.tostring(fonts, encoding='utf-8', xml_declaration=True)
     styles = ET.fromstring(files['word/styles.xml'])
     by_id = {s.get(tag('styleId')): s for s in styles.findall(tag('style'))}

@@ -31,21 +31,28 @@ for source in sources:
     relative = source.relative_to(ROOT)
     if relative.parts[0] in {'Export', 'Reference', 'styles', 'scripts'} or len(relative.parts) < 2:
         parser.exit(1, 'Choose a resume inside a role folder.\n')
-    output = ROOT / 'Export' / relative.parent / f'{source.stem} - {timestamp}'
+    record = ROOT / 'Export' / relative.parent / f'{source.stem} - {timestamp}'
+    # Stable path the portfolio site links to. Overwritten every run; the timestamped folder is not.
+    latest = ROOT / 'Export' / 'Latest' / relative.parent
     # Build in isolation so stale PDFs cannot be mistaken for a successful export.
     with tempfile.TemporaryDirectory(prefix='resume-export-') as temp:
         temp = Path(temp)
         reference = temp / 'reference.docx'
         build_reference(pandoc, ENGINE / 'styles/theme.json', reference)
         docx = temp / source.with_suffix('.docx').name
-        subprocess.run([pandoc, str(source), '--reference-doc', str(reference), '-o', str(docx)], check=True)
-        subprocess.run([soffice, '-env:UserInstallation=' + (temp / 'lo-profile').as_uri(), '--headless', '--convert-to', 'pdf:writer_pdf_Export', '--outdir', str(temp), str(docx)], check=True)
+        # Keep stdout to the published paths. Pandoc and LibreOffice must not write there;
+        # the publish workflow commits exactly the lines this script prints.
+        subprocess.run([pandoc, str(source), '--reference-doc', str(reference), '-o', str(docx)], check=True, stdout=subprocess.DEVNULL)
+        subprocess.run([soffice, '-env:UserInstallation=' + (temp / 'lo-profile').as_uri(), '--headless', '--convert-to', 'pdf:writer_pdf_Export', '--outdir', str(temp), str(docx)], check=True, stdout=subprocess.DEVNULL)
         pdf = docx.with_suffix('.pdf')
         if not pdf.exists() or pdf.stat().st_size == 0:
             raise RuntimeError('LibreOffice did not produce a PDF')
-        # Publish only completed generations; never overwrite an earlier run.
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.mkdir(exist_ok=False)
+        # Publish only completed generations. Never overwrite an earlier timestamped run.
+        record.parent.mkdir(parents=True, exist_ok=True)
+        record.mkdir(exist_ok=False)
+        latest.mkdir(parents=True, exist_ok=True)
         for file in (docx, pdf):
-            shutil.copy2(file, output / file.name)
-            print((output / file.name).relative_to(ROOT))
+            shutil.copy2(file, record / file.name)
+            print((record / file.name).relative_to(ROOT))
+            shutil.copy2(file, latest / file.name)
+            print((latest / file.name).relative_to(ROOT))

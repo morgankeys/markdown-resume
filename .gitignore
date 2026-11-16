@@ -1,4 +1,6 @@
-# Ignore all generations; keep the engine and folder placeholder.
+# Ignore local generations so a preview export is not an accidental source commit.
+# CI force-adds each timestamped run and Export/Latest/ when it publishes them.
+# Those tracked copies are the portfolio files; see README "Published copies".
 /Export/*
 !Export/.gitkeep
 !Export/_Engine/
